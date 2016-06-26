@@ -5,22 +5,27 @@ import {
   StyleSheet,
   Text,
   TouchableHighlight,
-  View
+  View,
+  Image,
+  Vibration
 } from 'react-native';
 import Camera from 'react-native-camera';
-
-let isFilming = false;
+import Proximity from 'react-native-proximity';
 
 class beeeme extends Component {
   constructor() {
     super();
+    this.render = this.render.bind(this);
     this.state = { isRecording: false, captured: false };
   }
 
   render() {
     if(this.state.captured === true){
       return(
-        <View></View>
+        <View style={styles.container}>
+          <Image style={styles.preview} source={{ uri: this.state.lastCapture }}/>
+          <Text style={styles.capture} onPress={this.toggleCaptured.bind(this)}>Close Preview</Text>
+        </View>
       )
     } else {
       return (
@@ -28,35 +33,54 @@ class beeeme extends Component {
           <Camera
             ref="camera"
             style={styles.preview}
-            aspect={Camera.constants.Aspect.fill}
-            captureMode={Camera.constants.CaptureMode.video}
-            captureAudio={true}
-            keepAwake={true}>
-            <Text style={styles.capture} onPress={this.toggleVideo.bind(this)}>[CAPTURE]</Text>
+            aspect={Camera.constants.Aspect.fill}>
+            <TouchableHighlight
+              style={styles.wrapper}
+              onPress={() => Vibration.vibrate(500)}>
+              <View style={styles.button}>
+                <Text>Vibrate</Text>
+              </View>
+            </TouchableHighlight>
           </Camera>
         </View>
       );
     }
   }
 
-  takePicture() {
-    const options = {
-      mode: 'video',
-      audio: true
-    };
-    this.refs.camera.capture(options)
-      .then((data) => console.log(data))
-      .catch(err => console.error(err));
+  isProximity(){
+    if(this.state.proximity === true){
+      Vibration.vibrate(500);
+      this.refs.camera.capture({
+          audio: true,
+          mode: Camera.constants.CaptureMode.video,
+          target: Camera.constants.CaptureTarget.cameraRoll
+      }, (e, data) => {
+        if(e) console.error(e);
+        this.setState({lastCapture: data});
+      });
+      this.setState({isRecording: true});
+    } else if(this.state.proximity === false && this.state.isRecording === true){
+      this.refs.camera.stopCapture();
+      this.setState({isRecording: false});
+      Vibration.vibrate(500);
+    }
   }
 
-  toggleVideo() {
-    if(isFilming == false){
-      this.takePicture();
-      setState({isRecording: true});
-    } else {
-      this.refs.camera.stopCapture();
-      setState({isRecording: false});
-    }
+  toggleCaptured(){
+    this.setState({
+      captured: !this.state.captured
+    })
+  }
+
+  componentDidMount(){
+    Proximity.addListener(this._setProximity.bind(this));
+  }
+
+  _setProximity(data) {
+    this.setState({
+      proximity: data.proximity,
+    });
+    this.isProximity();
   }
 }
 
@@ -71,13 +95,13 @@ const styles = StyleSheet.create({
     height: Dimensions.get('window').height,
     width: Dimensions.get('window').width
   },
-  capture: {
-    flex: 0,
-    backgroundColor: '#fff',
+  wrapper: {
     borderRadius: 5,
-    color: '#000',
+    marginBottom: 5,
+  },
+  button: {
+    backgroundColor: '#eeeeee',
     padding: 10,
-    margin: 40
   }
 });
 
