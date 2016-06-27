@@ -9,7 +9,9 @@
     "react": "15.1.0",
     "react-native": "0.28.0",
     "react-native-camera": "git+https://github.com/lwansbrough/react-native-camera.git",
+    "react-native-fs": "^1.5.1",
     "react-native-proximity": "^0.1.1",
-    "react-native-vibration": "^0.2.0"
+    "react-native-vibration": "^0.2.0",
+    "react-native-video": "^0.8.0"
   }
 }

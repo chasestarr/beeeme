@@ -11,19 +11,23 @@ import {
 } from 'react-native';
 import Camera from 'react-native-camera';
 import Proximity from 'react-native-proximity';
+import Video from 'react-native-video';
+// import RNFS from 'react-native-fs';
 
 class beeeme extends Component {
   constructor() {
     super();
     this.render = this.render.bind(this);
-    this.state = { isRecording: false, captured: false };
+    this.state = { isRecording: false, captured: false, lastCapture: 'placeholder' };
   }
 
   render() {
     if(this.state.captured === true){
+      console.log('##### last cap below #####')
+      console.log('last cap:', this.state.lastCapture)
       return(
         <View style={styles.container}>
-          <Image style={styles.preview} source={{ uri: this.state.lastCapture }}/>
+
           <Text style={styles.capture} onPress={this.toggleCaptured.bind(this)}>Close Preview</Text>
         </View>
       )
@@ -34,13 +38,14 @@ class beeeme extends Component {
             ref="camera"
             style={styles.preview}
             aspect={Camera.constants.Aspect.fill}>
+
             <TouchableHighlight
-              style={styles.wrapper}
-              onPress={() => Vibration.vibrate(500)}>
-              <View style={styles.button}>
-                <Text>Vibrate</Text>
-              </View>
-            </TouchableHighlight>
+            style={styles.wrapper}
+            onPress={() => this.vibe()}>
+            <View style={styles.button}>
+              <Text>Vibrate</Text>
+            </View>
+          </TouchableHighlight>
           </Camera>
         </View>
       );
@@ -49,20 +54,27 @@ class beeeme extends Component {
 
   isProximity(){
     if(this.state.proximity === true){
-      Vibration.vibrate(500);
-      this.refs.camera.capture({
+      if( this.refs.camera ) {
+        this.refs.camera.capture({
           audio: true,
           mode: Camera.constants.CaptureMode.video,
           target: Camera.constants.CaptureTarget.cameraRoll
-      }, (e, data) => {
-        if(e) console.error(e);
-        this.setState({lastCapture: data});
-      });
+        })
+          .then( ( data ) => {
+            // let base64Img = data.path;
+            console.log('########')
+            console.log('path:', data.path);
+            this.setState('data:', {lastCapture: data.path});
+            // RNFS.readFile( base64Img, 'base64' )
+            //   .then( res => this.setState( { lastCapture: res } ) )
+          });
+      }
+
       this.setState({isRecording: true});
     } else if(this.state.proximity === false && this.state.isRecording === true){
       this.refs.camera.stopCapture();
       this.setState({isRecording: false});
-      Vibration.vibrate(500);
+      this.toggleCaptured();
     }
   }
 
@@ -70,6 +82,11 @@ class beeeme extends Component {
     this.setState({
       captured: !this.state.captured
     })
+  }
+
+  vibe(){
+    console.log('vibing');
+    Vibration.vibrate();
   }
 
   componentDidMount(){
